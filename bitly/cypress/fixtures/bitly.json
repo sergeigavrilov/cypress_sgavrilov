@@ -1,0 +1,9 @@
+{
+    "baseUrl": "https://api-ssl.bitly.com",
+    "clientId": "7b8b455fcd2eb08f7300bc42e3fa383f1c34e258",
+    "secret": "493a1272948b71e665e1a27bea8bc477f94795c4",
+    "header": {
+        "basic": "Basic c2dhdnJpbG9mZjpCaXRseXBhc3MtMDEK",
+      }
+      
+}
