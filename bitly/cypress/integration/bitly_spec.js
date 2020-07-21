@@ -2,14 +2,16 @@
 
 // get configuration from JSON file
 import {  header, clientId, secret } from '../fixtures/bitly';
+import {sendRequest, setGroupPath, setPathSuffix} from './bitly/init'
 
 
 context('My First Test', () => {
 
-  var token
-  var groupId
+ var token
+ var groupId
   before( function() {
 
+    setPathSuffix("")
     cy.request({
       method: 'POST',
       url: '/oauth/access_token?client_id='+ 
@@ -27,13 +29,8 @@ context('My First Test', () => {
 
   it('Get groupID, positive', () => {
     // Get Group ID for future tests
-    cy.request({
-      method: 'GET',
-      url: '/v4/groups', 
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(resp => {
+    sendRequest('GET', setGroupPath(""), true, token)
+    .then(resp => {
       expect(resp.status).to.eq(200)
       // get GUID of the first group for test purposes
       groupId = resp.body.groups[0].guid
@@ -42,135 +39,95 @@ context('My First Test', () => {
   })
   
   it('Get information about group, positive', () => {
-
-    cy.request({
-      method: 'GET',
-      url: '/v4/groups/' + groupId, 
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(resp => {
+    let url = setGroupPath(groupId)
+    sendRequest('GET', url, true, token)
+    .then(resp => {
       expect(resp.status).to.eq(200)
       
     })
   })  
 
   it('Get information about group, negative - not found', () => {
-
-    cy.request({
-      method: 'GET',
-      url: '/groups/' + groupId,
-   failOnStatusCode: false
-    }).then(resp => {
+    let url = setGroupPath("somepath/" + groupId)
+    sendRequest('GET', url, false, token)
+    .then(resp => {
       expect(resp.status).to.eq(404)
     })
 })
 
-it('Get information about group, negative - no auth token', () => {
 
-  cy.request({
-    method: 'GET',
-    url: '/v4/groups/' + groupId,
-    failOnStatusCode: false
-  }).then(resp => {
+it('Get information about group, negative - no auth token', () => {
+  let url = setGroupPath(groupId)
+  sendRequest('GET', url, false, "")
+  .then(resp => {
     expect(resp.status).to.eq(403)
     expect(resp.body.message).to.eq('FORBIDDEN')        
   })
 })
 
 it('Get information about group, negative - incorrect auth token', () => {
-
-    cy.request({
-      method: 'GET',
-      url: '/v4/groups/' + groupId, 
-      failOnStatusCode: false,
-      headers: {
-        'Authorization': 'Bearer 123'
-      }
-    }).then(resp => {
+    let url = setGroupPath(groupId)
+    sendRequest('GET', url, false, "123")
+    .then(resp => {
       expect(resp.status).to.eq(403)
       expect(resp.body.message).to.eq('FORBIDDEN')
     })
   })
 
   it('Get information about group, negative - incorrect groupId', () => {
-
-    cy.request({
-      method: 'GET',
-      url: '/v4/groups/123', 
-      failOnStatusCode: false,
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(resp => {
+    let url = setGroupPath("123")
+    sendRequest('GET', url, false, token)  
+    .then(resp => {
       expect(resp.status).to.eq(403)
       expect(resp.body.description).to.eq('You are currently forbidden to access this resource.')
       
     })
   })
 
+  it ('Set path suffix for Bitlinks Sort requests', () => {
+        // Call it before Bitlinks Sort tests
+        setPathSuffix("/bitlinks/clicks") // sort by clicks is only currently available
+  })
+
   it('Get Bitlinks of the group ' + groupId + ' positive', () => {
-    cy.request({
-      method: 'GET',
-      url: '/v4/groups/' + groupId + '/bitlinks/clicks', // sort by clicks is only currently available
-      headers: {
-        'Authorization': 'Bearer ' + token
-      }
-    }).then(resp => {
+    let url = setGroupPath(groupId)
+    sendRequest('GET', url, true, token)
+    .then(resp => {
       expect(resp.status).to.eq(200)
       
     })
   })
     
-  it(`Get Bitlinks of the group ' + groupId + ', negative - not found`, () => {
-      cy.request({
-        method: 'GET',
-        url: '/groups/' + groupId + '/bitlinks/clicks', // sort by clicks is only currently available
-        failOnStatusCode: false,
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      }).then(resp => {
+  it('Get Bitlinks of the group ' + groupId + ', negative - not found', () => {
+      let url = setGroupPath("somepath/" + groupId)
+      sendRequest('GET', url, false, token)
+      .then(resp => {
         expect(resp.status).to.eq(404)
       })
   })
       
-  it('Get Bitlinks of the group ' + groupId + ' negative - incorrect groupId', () => {
-      cy.request({
-        method: 'GET',
-        url: '/v4/groups/123/bitlinks/clicks', 
-        failOnStatusCode: false,
-        headers: {
-          'Authorization': 'Bearer ' + token
-        }
-      }).then(resp => {
+  it('Get Bitlinks of the group with wrong groupId, negative - incorrect groupId', () => {
+      let url = setGroupPath("123")
+      sendRequest('GET', url, false, token)
+      .then(resp => {
         expect(resp.status).to.eq(403)
         expect(resp.body.description).to.eq('You are currently forbidden to access this resource.')
         
       })
   })
   it('Get Bitlinks of the group ' + groupId + ', negative - no auth token', () => {
-
-      cy.request({
-        method: 'GET',
-        url: '/v4/groups/' + groupId + '/bitlinks/clicks',
-        failOnStatusCode: false
-      }).then(resp => {
+      let url = setGroupPath(groupId)
+      sendRequest('GET', url, false, "")  
+      .then(resp => {
         expect(resp.status).to.eq(403)
         expect(resp.body.message).to.eq('FORBIDDEN')        
       })
   })
   
   it('Get Bitlinks of the group ' + groupId + ', negative - incorrect auth token', () => {
-  
-      cy.request({
-        method: 'GET',
-        url: '/v4/groups/' + groupId + '/bitlinks/clicks',
-        failOnStatusCode: false,
-        headers: {
-          'Authorization': 'Bearer 123'
-        }
-      }).then(resp => {
+      let url = setGroupPath(groupId)
+      sendRequest('GET', url, false, "123")
+      .then(resp => {
         expect(resp.status).to.eq(403)
         expect(resp.body.message).to.eq('FORBIDDEN')
       })
